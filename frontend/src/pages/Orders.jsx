@@ -1,11 +1,13 @@
 import { useEffect, useState } from 'react'
-import { Table, Button, Row, Col, Form, Card } from 'react-bootstrap'
+import { Table, Button, Row, Col, Form, Card, InputGroup } from 'react-bootstrap'
 import api from '../lib/api'
 
 export default function Orders() {
   const [catalog, setCatalog] = useState([])
   const [cart, setCart] = useState([])
   const [customer, setCustomer] = useState({ name: 'Walk-in Customer' })
+  const [trackingId, setTrackingId] = useState('')
+  const [tracking, setTracking] = useState(null)
 
   useEffect(() => {
     api.get('/catalog').then(r => setCatalog(r.data.data))
@@ -29,6 +31,12 @@ export default function Orders() {
     setCart([])
   }
 
+  const checkTracking = async () => {
+    if (!trackingId) return
+    const { data } = await api.get(`/orders/public/${trackingId}/tracking`)
+    setTracking(data)
+  }
+
   return (
     <Row>
       <Col md={7}>
@@ -45,7 +53,7 @@ export default function Orders() {
         </Table>
       </Col>
       <Col md={5}>
-        <Card>
+        <Card className="mb-3">
           <Card.Body>
             <h5>Cart</h5>
             <ul>
@@ -56,6 +64,21 @@ export default function Orders() {
               <Form.Control value={customer.name} onChange={e => setCustomer({ ...customer, name: e.target.value })} />
             </Form.Group>
             <Button disabled={!cart.length} onClick={place} className="w-100">Place Order</Button>
+          </Card.Body>
+        </Card>
+
+        <Card>
+          <Card.Body>
+            <h5>Track Order</h5>
+            <InputGroup className="mb-2">
+              <Form.Control placeholder="Order ID" value={trackingId} onChange={e => setTrackingId(e.target.value)} />
+              <Button onClick={checkTracking}>Check</Button>
+            </InputGroup>
+            {tracking && (
+              <div className="small text-muted">
+                Status: <strong>{tracking.status}</strong>{tracking.tracking_number ? ` • #${tracking.tracking_number}` : ''}
+              </div>
+            )}
           </Card.Body>
         </Card>
       </Col>
